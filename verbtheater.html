@@ -312,6 +312,12 @@ function startImageRound(v){
   placedSubj=false; placedAkk=false; verbMatched=false;
   currentSentence=''; studentAudioURL=null; isRecording=false;
   stageImg.src = 'data:image/jpeg;base64,'+IMAGES[v.nr];
+  // Erzwingt eine sofortige Neuberechnung des Layouts, da Safari die
+  // Container-Groesse (aspect-ratio + Drehung fuers Querformat) beim
+  // allerersten Zeichnen eines neuen Bildes manchmal falsch berechnet
+  // (oben/unten abgeschnitten) und das erst bei der naechsten
+  // Layout-Aenderung korrigiert.
+  void stageWrap.offsetHeight;
   endScreen.style.display='none';
   roundScreen.style.display='flex';
   nextBtn.style.visibility='hidden';

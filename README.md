@@ -1,2 +1,2 @@
 # Verbtheater
-V4.1 Fix Mikrofon 
+V4.2 Fix Verzerrung erstes Bild 
