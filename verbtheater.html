@@ -1050,6 +1050,13 @@ function showPrintPreview(page, done){
 }
 
 (async function init(){
+  // Beim Uebergang von der Startseite zum ersten Bild einmal kurz das
+  // Mikrofon anfordern. Das schaltet auf iOS die Audio-Sitzung der Seite
+  // auf eine vollwertige Kategorie um, die zuverlaessig hoerbar ist -
+  // ohne diesen Schritt bleibt Ton (Sprachausgabe wie eigene Aufnahme)
+  // beim allerersten Bild sonst stumm. Der Stream wird gecacht und bei
+  // der spaeteren echten Aufnahme wiederverwendet (keine zweite Abfrage).
+  try{ await getMicStream(); }catch(e){}
   try{
     const c = await window.storage.get('completed', false);
     if(c && c.value){
