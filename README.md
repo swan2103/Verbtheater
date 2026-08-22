@@ -1,2 +1,2 @@
 # Verbtheater
-V4.6 Fußzeile nochmals höher
+V4.6 stabil Fußzeile ganz unter Bild
