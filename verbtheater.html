@@ -70,7 +70,7 @@
   .verbBubble.wrongShake{animation:bshake .35s;}
   @keyframes bshake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px) rotate(-3deg);}75%{transform:translateX(8px) rotate(3deg);}}
 
-  #stageWrap{position:relative;width:var(--stage-w);aspect-ratio:600/422;margin-top:10px;border-radius:10px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.18);background:#fff;-webkit-touch-callout:none;-webkit-user-select:none;}
+  #stageWrap{position:relative;width:var(--stage-w);flex-shrink:0;aspect-ratio:600/422;margin-top:10px;border-radius:10px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.18);background:#fff;-webkit-touch-callout:none;-webkit-user-select:none;}
   #stageImg{width:100%;height:100%;display:block;object-fit:cover;-webkit-touch-callout:none;-webkit-user-select:none;pointer-events:none;}
   .maskImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;transition:opacity .18s;}
   #stageWrap.shake{animation:shake .3s;}
@@ -203,10 +203,25 @@ function adaptToLandscapeScreen(){
   const landscapeWidth = Math.max(w, h);  // laengere Seite = Breite im Querformat
   const landscapeHeight = Math.min(w, h); // kuerzere Seite = Hoehe im Querformat
   const widthBasedStage = landscapeWidth*0.84;
-  // Alles (Bild, Buttons, Text) haengt per calc() an --stage-w, daher reicht es,
-  // nur die Breite zu begrenzen, wenn die Hoehe zu knapp wird - der Faktor 1.2
-  // ist ein grober Erfahrungswert fuer Bild + Kopf-/Satzbereich zusammen.
-  const heightBasedStage = Math.max(160, landscapeHeight-16) / 1.08;
+  // Tatsaechlich benoetigte Hoehe fuer Kopfzeile + Verb-Reihe MESSEN statt
+  // schaetzen (nur moeglich, wenn #roundScreen schon sichtbar ist - davor
+  // ein Rueckfallwert). #stageWrap bekommt "flex-shrink:0" und darf sich
+  // nicht zusammendruecken lassen - daher muss hier von vornherein exakt so
+  // viel Hoehe abgezogen werden, wie Kopfzeile/Verb-Reihe wirklich
+  // brauchen, sonst ragt der Inhalt ueber den Bildschirm hinaus und wird
+  // scrollbar.
+  const rs = document.getElementById('roundScreen');
+  const tb = document.getElementById('topBar');
+  const vc = document.getElementById('verbChoices');
+  let reservedPx = 126;
+  if(rs && tb && vc && rs.offsetParent !== null){
+    const rsStyle = getComputedStyle(rs);
+    reservedPx = tb.offsetHeight + vc.offsetHeight
+      + parseFloat(rsStyle.paddingTop) + parseFloat(rsStyle.paddingBottom)
+      + 10; // stageWrap margin-top
+  }
+  const availableImgHeight = Math.max(140, landscapeHeight-16-reservedPx);
+  const heightBasedStage = availableImgHeight * 600/422;
   const stagePx = Math.min(widthBasedStage, heightBasedStage, 640);
   root.setProperty('--stage-w', stagePx+'px');
 }
@@ -312,14 +327,12 @@ function startImageRound(v){
   placedSubj=false; placedAkk=false; verbMatched=false;
   currentSentence=''; studentAudioURL=null; isRecording=false;
   stageImg.src = 'data:image/jpeg;base64,'+IMAGES[v.nr];
-  // Erzwingt eine sofortige Neuberechnung des Layouts, da Safari die
-  // Container-Groesse (aspect-ratio + Drehung fuers Querformat) beim
-  // allerersten Zeichnen eines neuen Bildes manchmal falsch berechnet
-  // (oben/unten abgeschnitten) und das erst bei der naechsten
-  // Layout-Aenderung korrigiert.
-  void stageWrap.offsetHeight;
   endScreen.style.display='none';
   roundScreen.style.display='flex';
+  // Erst jetzt ist #roundScreen sichtbar und Kopfzeile/Verb-Reihe haben
+  // eine echte Groesse zum Messen - Berechnung mit den tatsaechlichen
+  // Werten wiederholen (siehe adaptToLandscapeScreen).
+  adaptToLandscapeScreen();
   nextBtn.style.visibility='hidden';
   voiceRow.style.display='none';
   playbackBtn.classList.remove('ready');
