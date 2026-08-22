@@ -1,2 +1,3 @@
 # Verbtheater
-V4.6 stabil Fußzeile ganz unter Bild
+V4. stabil Fußzeile ganz unter Bild
+Verb jetzt grau
