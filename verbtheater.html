@@ -203,10 +203,16 @@ function adaptToLandscapeScreen(){
   const landscapeWidth = Math.max(w, h);  // laengere Seite = Breite im Querformat
   const landscapeHeight = Math.min(w, h); // kuerzere Seite = Hoehe im Querformat
   const widthBasedStage = landscapeWidth*0.84;
-  // Alles (Bild, Buttons, Text) haengt per calc() an --stage-w, daher reicht es,
-  // nur die Breite zu begrenzen, wenn die Hoehe zu knapp wird - der Faktor 1.2
-  // ist ein grober Erfahrungswert fuer Bild + Kopf-/Satzbereich zusammen.
-  const heightBasedStage = Math.max(160, landscapeHeight-16) / 1.08;
+  // Feste Pixel-Reservierung fuer Kopfzeile + Verb-Reihe (aus den echten
+  // CSS-Werten: roundScreen-Padding 10+6, topBar 24, verbChoices
+  // Margin+Hoehe+Padding 10+52+4, stageWrap-Margin 10 = 116px, plus etwas
+  // Sicherheitsmarge). Das Bild bekommt "flex-shrink:0" und darf sich nicht
+  // zusammendruecken lassen - daher muss hier von vornherein exakt so viel
+  // Hoehe abgezogen werden, wie Kopfzeile/Verb-Reihe wirklich brauchen,
+  // sonst ragt der Inhalt ueber den Bildschirm hinaus und wird scrollbar.
+  const RESERVED_PX = 126;
+  const availableImgHeight = Math.max(140, landscapeHeight-16-RESERVED_PX);
+  const heightBasedStage = availableImgHeight * 600/422;
   const stagePx = Math.min(widthBasedStage, heightBasedStage, 640);
   root.setProperty('--stage-w', stagePx+'px');
 }
