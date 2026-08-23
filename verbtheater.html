@@ -873,10 +873,13 @@ function playRecording(){
   src.buffer = lastAudioBuffer;
   // Lautstaerke-Verstaerkung: auf manchen Geraeten (z.B. iPad) kommt die
   // eigene Aufnahme ueber diesen Web-Audio-Wiedergabepfad deutlich leiser
-  // heraus als die Computerstimme.
+  // heraus als die Computerstimme. Kompressor VOR dem staerkeren Gain,
+  // damit lautere Stellen nicht hart uebersteuern/verzerren.
+  const compressor = ctx.createDynamicsCompressor();
   const gain = ctx.createGain();
-  gain.gain.value = 2.5;
-  src.connect(gain);
+  gain.gain.value = 6;
+  src.connect(compressor);
+  compressor.connect(gain);
   gain.connect(ctx.destination);
   src.start(0);
 }
