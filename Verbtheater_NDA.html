@@ -894,7 +894,13 @@ function playRecording(){
   const ctx = getAudioCtx();
   const src = ctx.createBufferSource();
   src.buffer = lastAudioBuffer;
-  src.connect(ctx.destination);
+  // Lautstaerke-Verstaerkung: auf manchen Geraeten (z.B. iPad) kommt die
+  // eigene Aufnahme ueber diesen Web-Audio-Wiedergabepfad deutlich leiser
+  // heraus als die Computerstimme.
+  const gain = ctx.createGain();
+  gain.gain.value = 2.5;
+  src.connect(gain);
+  gain.connect(ctx.destination);
   src.start(0);
 }
 

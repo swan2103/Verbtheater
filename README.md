@@ -1,3 +1,2 @@
 # Verbtheater
-V4. stabil Fußzeile ganz unter Bild
-Verb jetzt grau
+V4..x ipad bug bei Aufnamewiedergabe
