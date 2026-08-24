@@ -76,7 +76,7 @@
   #stageWrap.shake{animation:shake .3s;}
   @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
 
-  #sentenceArea{margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:58px;width:100%;max-width:640px;}
+  #sentenceArea{margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:70px;width:100%;max-width:640px;}
   #sentenceRow{display:flex;align-items:center;gap:10px;width:100%;justify-content:center;}
   #slots{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   .slot{min-width:110px;height:44px;border:3px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;padding:0 10px;}
@@ -232,7 +232,7 @@ function adaptToLandscapeScreen(){
     // deshalb hier ein fester Sicherheitswert dafuer, damit spaeter beim
     // Erscheinen kein erneutes (sichtbares) Umrechnen/Springen der
     // Bildgroesse noetig wird.
-    const VOICEROW_RESERVE = 44;
+    const VOICEROW_RESERVE = 56;
     reservedPx = parseFloat(rsStyle.paddingTop) + parseFloat(rsStyle.paddingBottom)
       + outerHeight(tb) + outerHeight(vc)
       + (parseFloat(getComputedStyle(sw).marginTop)||0)

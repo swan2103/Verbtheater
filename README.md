@@ -1,4 +1,3 @@
 # Verbtheater
-V4.7 wie 4.6 mit wieder etwas größerem Bild
-
+V4.6a wieder wie 4.5 aber mit kleineren Verbbuttons
 
