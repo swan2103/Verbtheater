@@ -1,2 +1,3 @@
 # Verbtheater
-V4..x ipad bug bei Aufnamewiedergabe
+V4.6 Rebuild wg iphone scalierungsfehler
+
