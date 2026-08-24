@@ -1,3 +1,4 @@
 # Verbtheater
-V4.6 Rebuild wg iphone scalierungsfehler
+V4.7 wie 4.6 mit wieder etwas größerem Bild
+
 
