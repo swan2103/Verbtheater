@@ -1,3 +1,3 @@
 # Verbtheater
-V4.7 Zoom aus - Bildgröße neu berechnet
+V6.0 Scalierung über Browserfunktion
 
