@@ -1,3 +1,4 @@
 # Verbtheater
-V6.0 Scalierung über Browserfunktion
+V6.1 Scalierung über Browserfunktion Verbesserung
+
 

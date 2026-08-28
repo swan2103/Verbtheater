@@ -52,7 +52,7 @@
   }
 
   /* ---------- ROUND SCREEN ---------- */
-  #roundScreen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:10px 10px 6px;overflow-y:auto;}
+  #roundScreen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:10px 10px 6px;overflow:hidden;}
   #topBar{display:flex;justify-content:space-between;align-items:flex-start;width:100%;max-width:760px;min-height:24px;}
   #hintText{font-size:15px;color:#777;max-width:460px;}
   #palette{display:flex;gap:10px;}
@@ -65,12 +65,12 @@
   #verbLabel.show{transform:translate(-50%,-50%) scale(1);}
 
   #verbChoices{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:12px;justify-content:flex-start;max-width:640px;margin-top:10px;min-height:52px;padding-bottom:4px;}
-  .verbBubble{background:#fff;border:3px solid #999;border-radius:40px;padding:calc(var(--stage-w)*0.008) calc(var(--stage-w)*0.02);font-size:calc(var(--stage-w)*0.0297);cursor:grab;box-shadow:0 3px 0 rgba(0,0,0,.15);user-select:none;touch-action:none;transition:transform .15s;}
+  .verbBubble{background:#fff;border:3px solid #999;border-radius:40px;padding:calc(var(--stage-w)*0.008) calc(var(--stage-w)*0.02);font-size:calc(var(--stage-w)*0.0297);cursor:grab;box-shadow:0 3px 0 rgba(0,0,0,.15);user-select:none;touch-action:none;transition:transform .15s;white-space:nowrap;flex-shrink:0;}
   .verbBubble.dragging{opacity:.4;}
   .verbBubble.wrongShake{animation:bshake .35s;}
   @keyframes bshake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px) rotate(-3deg);}75%{transform:translateX(8px) rotate(3deg);}}
 
-  #stageWrap{position:relative;width:var(--stage-w);flex-shrink:0;aspect-ratio:600/422;margin-top:10px;border-radius:10px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.18);background:#fff;-webkit-touch-callout:none;-webkit-user-select:none;}
+  #stageWrap{position:relative;flex:1 1 0;min-height:0;min-width:0;max-width:100%;max-height:100%;aspect-ratio:600/422;margin-top:10px;border-radius:10px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.18);background:#fff;-webkit-touch-callout:none;-webkit-user-select:none;}
   #stageImg{width:100%;height:100%;display:block;object-fit:cover;-webkit-touch-callout:none;-webkit-user-select:none;pointer-events:none;}
   .maskImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;transition:opacity .18s;}
   .hitZone{position:absolute;background:transparent;}
@@ -213,58 +213,47 @@ const IMAGES = {"1": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCg
 // Handys im Querformat an (robuster als reine vw/vh-Einheiten, die auf
 // vielen mobilen Browsern durch ein-/ausblendende Adressleisten springen).
 function adaptToLandscapeScreen(){
+  // Nur noch --vw/--vh setzen (fuer den Drehungs-Trick, siehe
+  // #rotateWrapper). Die Bildgroesse selbst wird NICHT mehr hier
+  // geschaetzt/berechnet - das macht jetzt CSS ganz allein: #stageWrap ist
+  // ein Flex-Element mit fester Bildproportion (aspect-ratio:600/422), das
+  // automatisch immer den kompletten uebrigen Platz bekommt (siehe CSS).
+  // Der Browser rechnet das bei jeder Fenstergroesse/Drehung sofort neu -
+  // keine eigene, fehleranfaellige Platzberechnung mehr noetig.
   const w = window.innerWidth;
   const h = window.innerHeight;
   const root = document.documentElement.style;
   root.setProperty('--vw', w+'px');
   root.setProperty('--vh', h+'px');
-  const landscapeWidth = Math.max(w, h);  // laengere Seite = Breite im Querformat
-  const landscapeHeight = Math.min(w, h); // kuerzere Seite = Hoehe im Querformat
-  const widthBasedStage = landscapeWidth*0.84;
-  // Tatsaechlich benoetigte Hoehe fuer ALLES ausser dem Bild selbst MESSEN
-  // statt schaetzen (nur moeglich, wenn #roundScreen schon sichtbar ist -
-  // davor ein Rueckfallwert). #stageWrap bekommt "flex-shrink:0" und darf
-  // sich nicht zusammendruecken lassen - daher muss hier von vornherein
-  // exakt so viel Hoehe abgezogen werden, wie ALLES ANDERE wirklich
-  // braucht: Kopfzeile + Verb-Reihe OBERHALB, aber genauso Satzteile-
-  // Bereich + Lautsprecher/Mikro/Weiter-Zeile UNTERHALB des Bildes -
-  // beides wurde vorher gebraucht, aber nur der obere Teil wurde
-  // gemessen. Das war die eigentliche Ursache dafuer, dass man zum
-  // Scrollen gezwungen war.
-  const rs = document.getElementById('roundScreen');
-  const tb = document.getElementById('topBar');
-  const vc = document.getElementById('verbChoices');
-  const sw = document.getElementById('stageWrap');
-  const sa = document.getElementById('sentenceArea');
-  const bb = document.getElementById('bottomBar');
-  let reservedPx = 260;
-  if(rs && tb && vc && sw && sa && bb && rs.offsetParent !== null){
-    const outerHeight = el => {
-      const cs = getComputedStyle(el);
-      return (parseFloat(cs.marginTop)||0) + el.offsetHeight + (parseFloat(cs.marginBottom)||0);
-    };
-    const rsStyle = getComputedStyle(rs);
-    // Die Lautsprecher/Mikro-Zeile (voiceRow) ist zu Rundenbeginn noch
-    // unsichtbar (display:none) und wuerde dann mit 0px eingerechnet -
-    // deshalb hier ein fester Sicherheitswert dafuer, damit spaeter beim
-    // Erscheinen kein erneutes (sichtbares) Umrechnen/Springen der
-    // Bildgroesse noetig wird.
-    const VOICEROW_RESERVE = 56;
-    reservedPx = parseFloat(rsStyle.paddingTop) + parseFloat(rsStyle.paddingBottom)
-      + outerHeight(tb) + outerHeight(vc)
-      + (parseFloat(getComputedStyle(sw).marginTop)||0)
-      + outerHeight(sa) + Math.max(outerHeight(bb), VOICEROW_RESERVE);
-  }
-  const availableImgHeight = Math.max(140, landscapeHeight-16-reservedPx);
-  const heightBasedStage = availableImgHeight * 600/422;
-  const stagePx = Math.min(widthBasedStage, heightBasedStage, 640);
-  root.setProperty('--stage-w', stagePx+'px');
 }
 adaptToLandscapeScreen();
 window.addEventListener('resize', adaptToLandscapeScreen);
 window.addEventListener('orientationchange', ()=>setTimeout(adaptToLandscapeScreen,300));
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize', adaptToLandscapeScreen);
+}
+
+// --stage-w (fuer alle proportional skalierten Schriften/Buttons/Icons)
+// wird jetzt aus der TATSAECHLICH gerenderten Bildbreite abgeleitet, per
+// ResizeObserver - beobachtet die echte, vom Browser berechnete Groesse,
+// statt sie selbst zu schaetzen. Reagiert automatisch auf jede Aenderung.
+const stageWrapEl = document.getElementById('stageWrap');
+if(stageWrapEl && window.ResizeObserver){
+  const ro = new ResizeObserver(entries=>{
+    for(const entry of entries){
+      const width = entry.contentRect.width;
+      if(width>0) document.documentElement.style.setProperty('--stage-w', width+'px');
+    }
+  });
+  ro.observe(stageWrapEl);
+} else if(stageWrapEl){
+  // Rueckfall fuer sehr alte Browser ohne ResizeObserver
+  const syncStageW = ()=>{
+    const width = stageWrapEl.getBoundingClientRect().width;
+    if(width>0) document.documentElement.style.setProperty('--stage-w', width+'px');
+  };
+  syncStageW();
+  window.addEventListener('resize', syncStageW);
 }
 
 // Versucht, das Handy im Querformat zu fixieren, damit es beim Neigen
