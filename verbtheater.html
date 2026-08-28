@@ -1142,39 +1142,13 @@ function showPrintPreview(page, done){
 }
 
 (async function init(){
-  // --- DIAGNOSE-OVERLAY (temporaer): zeigt sichtbar, was beim Start
-  // passiert, da der Ton auf einem iPhone trotz erteilter Erlaubnis fehlt.
-  const dbg = document.createElement('div');
-  dbg.id = 'startupDebug';
-  dbg.style.cssText = 'position:fixed;top:2px;left:2px;z-index:99999;background:rgba(0,0,0,.8);color:#0f0;font:11px monospace;padding:6px 8px;border-radius:6px;white-space:pre;max-width:96vw;overflow:auto;';
-  document.body.appendChild(dbg);
-  const log = (msg)=>{ dbg.textContent += msg+'\n'; };
-  log('Start init()...');
   // Beim Uebergang von der Startseite zum ersten Bild einmal kurz das
   // Mikrofon anfordern. Das schaltet auf iOS die Audio-Sitzung der Seite
   // auf eine vollwertige Kategorie um, die zuverlaessig hoerbar ist -
   // ohne diesen Schritt bleibt Ton (Sprachausgabe wie eigene Aufnahme)
   // beim allerersten Bild sonst stumm. Der Stream wird gecacht und bei
   // der spaeteren echten Aufnahme wiederverwendet (keine zweite Abfrage).
-  try{
-    const stream = await getMicStream();
-    log('Mikrofon OK: '+(stream ? stream.getAudioTracks().length+' Spur(en)' : 'kein Stream'));
-  }catch(e){
-    log('Mikrofon FEHLER: '+e.name+' - '+e.message);
-  }
-  try{
-    const ctx = getAudioCtx();
-    log('AudioContext state: '+ctx.state);
-    try{ await ctx.resume(); log('AudioContext nach resume(): '+ctx.state); }catch(e2){ log('resume() FEHLER: '+e2.message); }
-  }catch(e){
-    log('AudioContext FEHLER: '+e.message);
-  }
-  try{
-    const voices = speechSynthesis.getVoices();
-    log('Stimmen verfuegbar: '+voices.length);
-  }catch(e){
-    log('speechSynthesis FEHLER: '+e.message);
-  }
+  try{ await getMicStream(); }catch(e){}
   try{
     const c = await window.storage.get('completed', false);
     if(c && c.value){
@@ -1186,10 +1160,7 @@ function showPrintPreview(page, done){
     }
     const s = await window.storage.get('sentences', false).catch(()=>null);
     if(s && s.value) sentenceByNr = JSON.parse(s.value);
-  }catch(e){
-    log('window.storage FEHLER (unschaedlich): '+e.message);
-  }
-  log('init() fertig.');
+  }catch(e){}
   const rest = remainingSequence();
   if(rest.length){
     startImageRound(rest[0]);
