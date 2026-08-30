@@ -661,6 +661,21 @@ function zoneAt(clientX, clientY){
   if(!zone || zone.style.display==='none') return null;
   return zone.dataset.color === 'quickjump' ? null : zone.dataset.color;
 }
+// Fuer das Ablegen einer Farbe reicht die oberste Zone an dieser Stelle
+// nicht aus: liegen sich zwei Zonen im Bild nahe (z.B. Kleid und Auto),
+// koennen sich ihre Flaechen ueberschneiden - dann "gewinnt" sonst immer
+// nur die zuletzt gezeichnete Zone, auch wenn eine andere, passende Zone
+// an derselben Stelle ebenfalls liegt. elementsFromPoint() liefert ALLE
+// uebereinanderliegenden Elemente, nicht nur das oberste - so wird jede
+// tatsaechlich vorhandene Zone erkannt, unabhaengig von Ueberlappung.
+function isColorAt(clientX, clientY, color){
+  const els = document.elementsFromPoint(clientX, clientY);
+  for(const el of els){
+    const zone = el.classList && el.classList.contains('hitZone') ? el : null;
+    if(zone && zone.style.display!=='none' && zone.dataset.color===color) return true;
+  }
+  return false;
+}
 function showMask(img){
   if(img.complete && img.naturalWidth>0){
     img.style.opacity=1;
@@ -765,9 +780,9 @@ function makeDraggableBlob(el){
       unregisterDragCleanup(cleanupDrag);
       ghost.remove();
       el.classList.remove('dragging');
-      const zoneColor = zoneAt(ev.clientX, ev.clientY);
-      const already = (zoneColor==='green' && placedSubj) || (zoneColor==='purple' && placedDat) || (zoneColor==='yellow' && placedAkk);
-      if(zoneColor===color && !already){
+      const hit = isColorAt(ev.clientX, ev.clientY, color);
+      const already = (color==='green' && placedSubj) || (color==='purple' && placedDat) || (color==='yellow' && placedAkk);
+      if(hit && !already){
         fillZone(color);
         el.style.visibility='hidden';
         el.dataset.placed='1';
