@@ -631,29 +631,65 @@ async function buildZonesData(){
   positionHitZone(hitZoneYellow, maskCtxYellow, current.valence===2 && !!current.maskYellow);
 }
 
-// zoneAt() fragt jetzt den Browser selbst, welches Element an dieser Stelle
-// liegt (document.elementFromPoint) - das ist von Natur aus immer korrekt,
-// egal wie das Bild gedreht, gezoomt oder skaliert ist. Keine eigene
-// Koordinaten-Umrechnung mehr noetig.
-function zoneAt(clientX, clientY){
-  const el = document.elementFromPoint(clientX, clientY);
-  if(!el) return null;
-  const zone = el.closest('.hitZone');
-  if(!zone || zone.style.display==='none') return null;
-  return zone.dataset.color === 'quickjump' ? null : zone.dataset.color;
+// Trefferzonen (.hitZone) sind nur grobe Rechtecke (Bounding-Box der
+// Maske) - der Browser positioniert sie zwar immer korrekt (egal wie das
+// Bild gedreht/skaliert ist), aber liegen zwei Zonen nah beieinander
+// (z.B. Kleid und Tochter), koennen sich ihre Rechtecke ueberschneiden.
+// Um das aufzuloesen, wird an einer moeglichen Trefferstelle zusaetzlich
+// exakt in der ECHTEN Maske (Pixel-Alpha) nachgeprueft - unter Nutzung
+// der eigenen, vom Browser garantiert korrekt berechneten Position DER
+// ZONE SELBST (zoneEl.getBoundingClientRect()), nicht der ganzen,
+// gedrehten Buehne - das macht auch diesen Teil unabhaengig von eigener
+// Drehungs-Mathematik.
+function pixelHitInZone(zoneEl, ctx, clientX, clientY){
+  const r = zoneEl.getBoundingClientRect();
+  if(r.width<=0 || r.height<=0) return false;
+  const fx = (clientX-r.left)/r.width;
+  const fy = (clientY-r.top)/r.height;
+  if(fx<0||fx>1||fy<0||fy>1) return false;
+  const boxLeftPct = parseFloat(zoneEl.style.left)||0;
+  const boxTopPct = parseFloat(zoneEl.style.top)||0;
+  const boxWidthPct = parseFloat(zoneEl.style.width)||0;
+  const boxHeightPct = parseFloat(zoneEl.style.height)||0;
+  const maskX = Math.round((boxLeftPct + fx*boxWidthPct)/100*600);
+  const maskY = Math.round((boxTopPct + fy*boxHeightPct)/100*422);
+  if(maskX<0||maskY<0||maskX>=600||maskY>=422) return false;
+  const RADIUS = 6;
+  const x0=Math.max(0,maskX-RADIUS), y0=Math.max(0,maskY-RADIUS);
+  const x1=Math.min(599,maskX+RADIUS), y1=Math.min(421,maskY+RADIUS);
+  const data = ctx.getImageData(x0,y0,x1-x0+1,y1-y0+1).data;
+  for(let i=3;i<data.length;i+=4){ if(data[i]>40) return true; }
+  return false;
 }
-// Fuer das Ablegen einer Farbe reicht die oberste Zone an dieser Stelle
-// nicht aus: liegen sich zwei Zonen im Bild nahe (z.B. Kleid und Auto),
-// koennen sich ihre Flaechen ueberschneiden - dann "gewinnt" sonst immer
-// nur die zuletzt gezeichnete Zone, auch wenn eine andere, passende Zone
-// an derselben Stelle ebenfalls liegt. elementsFromPoint() liefert ALLE
-// uebereinanderliegenden Elemente, nicht nur das oberste - so wird jede
-// tatsaechlich vorhandene Zone erkannt, unabhaengig von Ueberlappung.
+function maskCtxForColor(color){
+  if(color==='green') return maskCtxGreen;
+  if(color==='yellow') return maskCtxYellow;
+  return null;
+}
+// Welche Zone(n) liegen an dieser Stelle? elementsFromPoint() liefert
+// ALLE uebereinanderliegenden Elemente (nicht nur das oberste), damit bei
+// Ueberlappung jede echte Kandidatin gefunden wird - danach entscheidet
+// die pixelgenaue Pruefung, welche davon wirklich getroffen wurde.
+function zoneAt(clientX, clientY){
+  const els = document.elementsFromPoint(clientX, clientY);
+  for(const el of els){
+    if(!el.classList || !el.classList.contains('hitZone')) continue;
+    if(el.style.display==='none') continue;
+    const color = el.dataset.color;
+    if(color==='quickjump') continue;
+    const ctx = maskCtxForColor(color);
+    if(ctx && pixelHitInZone(el, ctx, clientX, clientY)) return color;
+  }
+  return null;
+}
 function isColorAt(clientX, clientY, color){
   const els = document.elementsFromPoint(clientX, clientY);
   for(const el of els){
     const zone = el.classList && el.classList.contains('hitZone') ? el : null;
-    if(zone && zone.style.display!=='none' && zone.dataset.color===color) return true;
+    if(zone && zone.style.display!=='none' && zone.dataset.color===color){
+      const ctx = maskCtxForColor(color);
+      if(ctx && pixelHitInZone(zone, ctx, clientX, clientY)) return true;
+    }
   }
   return false;
 }
