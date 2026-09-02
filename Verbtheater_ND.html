@@ -32,10 +32,11 @@
   .doneIcon img{width:100%;height:100%;object-fit:cover;}
   .doneIcon:hover{opacity:1;filter:grayscale(.4);}
 
-  #endScreen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;}
-  #endScreen h1{font-size:30px;color:#4a4a4a;text-align:center;}
+  #endScreen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;padding:24px 20px;overflow-y:auto;}
+  #endScreen h1{font-size:clamp(28px,5vw,44px);color:#4a4a4a;text-align:center;margin:6px 0 0;}
+  #endClap{font-size:clamp(36px,6vw,54px);text-align:center;margin:0 0 10px;}
   #endScreen p{font-size:18px;color:#777;}
-  #endMenu{display:flex;flex-direction:column;gap:12px;margin-top:10px;width:min(90vw,360px);}
+  #endMenu{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:16px;max-width:min(94vw,700px);}
   .endBtn{font-size:17px;padding:12px 20px;border-radius:14px;border:3px solid var(--green);background:#fff;color:#2a2a2a;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.15);transition:transform .12s;}
   .endBtn:hover{transform:scale(1.03);}
   .endBtn:active{transform:scale(.97);}
@@ -134,13 +135,9 @@
   <div id="doneRail"></div>
 
   <div id="endScreen">
-    <h1>Sehr gut, Sie haben alles geschafft!</h1>
-    <div id="endMenu">
-      <button class="endBtn" id="btnPrint">Bilder mit Text drucken?</button>
-      <button class="endBtn" id="btnPracticeAgain">Nochmal üben? (Bilder in anderer Reihenfolge)</button>
-      <button class="endBtn" id="btnOtherVerbs">Andere Verben?</button>
-      <button class="endBtn" id="btnEnd">Ende?</button>
-    </div>
+    <h1 id="endTitle">Gut gemacht!</h1>
+    <div id="endClap">👏</div>
+    <div id="endMenu"></div>
   </div>
 
   <div id="printSheet"></div>
@@ -314,10 +311,7 @@ const hintText = document.getElementById('hintText');
 const verbLabel = document.getElementById('verbLabel');
 const verbChoicesEl = document.getElementById('verbChoices');
 const endScreen = document.getElementById('endScreen');
-const btnPrint = document.getElementById('btnPrint');
-const btnPracticeAgain = document.getElementById('btnPracticeAgain');
-const btnOtherVerbs = document.getElementById('btnOtherVerbs');
-const btnEnd = document.getElementById('btnEnd');
+
 const replaySpeakerBtn = document.getElementById('replaySpeakerBtn');
 const voiceRow = document.getElementById('voiceRow');
 const micBtn = document.getElementById('micBtn');
@@ -770,7 +764,7 @@ function quickJumpNext(){
   if(idx === sequence.length-1){
     roundScreen.style.display='none';
     renderDoneRail();
-    endScreen.style.display='flex';
+    showEndScreen();
     return;
   }
   const next = sequence[idx+1];
@@ -1138,13 +1132,13 @@ nextBtn.addEventListener('click', async ()=>{
       } else {
         roundScreen.style.display='none';
         renderDoneRail();
-        endScreen.style.display='flex';
+        showEndScreen();
       }
     });
   });
 });
 
-btnPrint.addEventListener('click', ()=>{
+function doPrint(){
   const sheet = document.getElementById('printSheet');
   sheet.innerHTML='';
   sequence.slice().sort((a,b)=>a.nr-b.nr).forEach(v=>{
@@ -1160,24 +1154,49 @@ btnPrint.addEventListener('click', ()=>{
     sheet.appendChild(card);
   });
   window.print();
-});
-
-btnPracticeAgain.addEventListener('click', ()=>{
+}
+function doPracticeAgain(){
   completedNrs = new Set();
   sequence = VERB_DATA.slice().sort(()=>Math.random()-0.5);
   endScreen.style.display='none';
   startImageRound(sequence[0]);
-});
-
-btnOtherVerbs.addEventListener('click', ()=>{
-  window.location.href = 'Verbtheater_NDA.html';
-});
-
-btnEnd.addEventListener('click', ()=>{
-  document.getElementById('endMenu').style.display='none';
-  document.querySelector('#endScreen h1').textContent = 'Bis zum nächsten Mal! 👋';
+}
+function doRestartSameOrder(){
+  completedNrs = new Set();
+  sequence = VERB_DATA.slice().sort((a,b)=>a.nr-b.nr);
+  endScreen.style.display='none';
+  startImageRound(sequence[0]);
+}
+function doEnd(){
   restoreOrientation();
-});
+  window.location.href = 'Startseite.html';
+}
+function renderEndMenu(buttons){
+  const menu = document.getElementById('endMenu');
+  menu.innerHTML = '';
+  buttons.forEach(b=>{
+    const btn = document.createElement('button');
+    btn.className = 'endBtn';
+    btn.textContent = b.label;
+    const rot = (Math.random()*10-5).toFixed(1);
+    btn.style.transform = `rotate(${rot}deg)`;
+    btn.addEventListener('click', b.action);
+    menu.appendChild(btn);
+  });
+}
+function showEndScreen(){
+  document.getElementById('endMenu').style.display='flex';
+  document.getElementById('endClap').style.display='';
+  document.getElementById('endTitle').textContent = 'Gut gemacht!';
+  renderEndMenu([
+    {label:'Verb mit Nominativ, Dativ und Akkusativ', action:()=>{ window.location.href='Verbtheater_NDA.html'; }},
+    {label:'nochmal', action:doRestartSameOrder},
+    {label:'zufällig', action:doPracticeAgain},
+    {label:'jetzt drucken', action:doPrint},
+    {label:'Tschüs', action:doEnd}
+  ]);
+  endScreen.style.display='flex';
+}
 
 function showPrintPreview(page, done){
   const sheet = document.getElementById('a4Sheet');
@@ -1225,7 +1244,7 @@ function showPrintPreview(page, done){
     startImageRound(rest[0]);
   } else {
     renderDoneRail();
-    endScreen.style.display='flex';
+    showEndScreen();
   }
 })();
 </script>
